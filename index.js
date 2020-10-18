@@ -1,13 +1,12 @@
 import WebSocket from 'ws';
-import http from 'http';
+import https from 'https';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
-const users = {}
 const connections = {}
 
 const app = express();
-const server = http.createServer(app);
+const server = https.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', ws => {
@@ -31,8 +30,9 @@ wss.on('connection', ws => {
     });
 
     ws.on('close', ws => {
-        console.log('Connection closed')
+        console.log(`Connection closed ${ws.uuid}`)
         // close user connection
+        delete connections[ws.uuid];
     });
 });
 
@@ -40,23 +40,6 @@ wss.on('connection', ws => {
 server.listen(process.env.PORT || 1337, () => {
     console.log(`Server started on port ${server.address().port} :)`);
 });
-
-const disonnect = (ws) => {
-    const uuid = ws.uuid
-    if (connections[uuid]) {
-        console.log('Disonnect:', users[uuid].name)
-
-        delete connections[uuid]
-        delete users[uuid]
-
-        // update all clients' user name list
-
-        console.log(users)
-    } else {
-        console.log('Attempt to disconnect null user:', uuid)
-        ws.send(JSON.stringify({ command: 'failed' }))
-    }
-}
 
 const broadcast = (message) => {
     wss.clients.forEach(client => {
