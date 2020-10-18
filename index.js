@@ -5,6 +5,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
 const connections = {}
+const users = {}
 
 const app = express();
 const server = http.createServer(app);
@@ -35,14 +36,24 @@ wss.on('connection', ws => {
         } catch (e) {
             console.log('Message had invalid JSON')
         }
+
+        if (data.newUser) {
+            ws.username = data.username
+            users[data.username] = data.color
+            udpateUsers();
+        }
+
         console.log(data)
         broadcast(message);
     });
 
-    ws.on('close', ws => {
+    ws.on('close', () => {
         console.log(`Connection closed ${ws.uuid}`)
         // close user connection
         delete connections[ws.uuid];
+        delete users[ws.username];
+        broadcast(JSON.stringify({ broadcast: true, message: `${ws.username} has left` }))
+        udpateUsers();
     });
 });
 
@@ -50,6 +61,14 @@ wss.on('connection', ws => {
 server.listen(process.env.PORT || 1337, () => {
     console.log(`Server started on port ${server.address().port} :)`);
 });
+
+const udpateUsers = () => {
+    console.log(JSON.stringify(users, null, 4))
+    broadcast(JSON.stringify({
+        updateUserList: true,
+        users
+    }))
+}
 
 const broadcast = (message) => {
     wss.clients.forEach(client => {
