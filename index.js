@@ -56,8 +56,10 @@ wss.on('connection', ws => {
         // close user connection
         delete connections[ws.uuid];
         delete users[ws.username];
-        broadcast(JSON.stringify({ broadcast: true, message: `${ws.username} has left` }))
-        updateUsers();
+        if (ws.username) {
+            broadcast(JSON.stringify({ broadcast: true, message: `${ws.username} has left` }))
+            updateUsers();
+        }
     });
 });
 
