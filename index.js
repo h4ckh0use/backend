@@ -127,7 +127,8 @@ db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').onSnapshot(doc => {
         } else {
             // toggle current
             db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').update({
-                current: d.current === 'work' ? 'break' : 'work'
+                timer: new Date(),
+                current: d.current === 'work' ? 'break' : 'work',
             })
         }
     }
