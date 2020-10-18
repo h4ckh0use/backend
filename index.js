@@ -47,6 +47,10 @@ wss.on('connection', ws => {
             updateUsers();
         }
 
+        if (data.getUsers) {
+            updateUsers();
+        }
+
         console.log(data)
         broadcast(message);
     });
@@ -119,7 +123,7 @@ db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').onSnapshot(doc => {
             db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').update({
                 timer: new Date((new Date()).getTime() + timerPeriodms),
             })
-    
+
             // set timeout to clear active after time period
             setTimeout(() => {
                 setInactive();
