@@ -9,6 +9,11 @@ const app = express();
 const server = https.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+setInterval(function() {
+    https.get("https://hackhouse-backend.herokuapp.com/");
+    console.log('hackhouse pinged');
+}, 600000);
+
 wss.on('connection', ws => {
     console.log('New Connection opened')
     const uuid = uuidv4();
