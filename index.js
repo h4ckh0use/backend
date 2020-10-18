@@ -1,8 +1,11 @@
-import WebSocket from 'ws';
-import https from 'https';
-import http from 'http';
-import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
+const WebSocket = require('ws')
+const https = require('https')
+const http = require('http')
+const express = require('express')
+const { v4: uuidv4 } = require('uuid')
+
+const firebase = require('firebase/app');
+require('firebase/firestore');
 
 const connections = {}
 const users = {}
@@ -27,6 +30,7 @@ wss.on('connection', ws => {
     ws.uuid = uuid
     connections[uuid] = ws
     ws.send('Successful connection!')
+    updateUsers()
 
     ws.on('message', message => {
         let data;
@@ -40,7 +44,7 @@ wss.on('connection', ws => {
         if (data.newUser) {
             ws.username = data.username
             users[data.username] = data.color
-            udpateUsers();
+            updateUsers();
         }
 
         console.log(data)
@@ -53,7 +57,7 @@ wss.on('connection', ws => {
         delete connections[ws.uuid];
         delete users[ws.username];
         broadcast(JSON.stringify({ broadcast: true, message: `${ws.username} has left` }))
-        udpateUsers();
+        updateUsers();
     });
 });
 
@@ -62,7 +66,7 @@ server.listen(process.env.PORT || 1337, () => {
     console.log(`Server started on port ${server.address().port} :)`);
 });
 
-const udpateUsers = () => {
+const updateUsers = () => {
     console.log(JSON.stringify(users, null, 4))
     broadcast(JSON.stringify({
         updateUserList: true,
@@ -77,3 +81,53 @@ const broadcast = (message) => {
         }
     });
 }
+
+// timer management
+const firebaseConfig = {
+    apiKey: 'AIzaSyD-OBa_D5u6_3SKQPCN421FTsSjIZlhd3g',
+    authDomain: 'hackhouse-40180.firebaseapp.com',
+    databaseURL: 'https://hackhouse-40180.firebaseio.com',
+    projectId: 'hackhouse-40180',
+    storageBucket: 'hackhouse-40180.appspot.com',
+    messagingSenderId: '688457122022',
+    appId: '1:688457122022:web:abd70e49ab332b026b7b27',
+    measurementId: 'G-HVBVV95GHF',
+}
+
+firebase.initializeApp(firebaseConfig)
+const db = firebase.firestore()
+let prev = false;
+
+// check timer
+function setInactive() {
+    db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').update({
+        active: false,
+    })
+}
+
+db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').onSnapshot(doc => {
+    const d = doc.data()
+    const timerPeriod = d.current === 'work' ? d.workTime : d.breakTime
+    const timerPeriodms = timerPeriod * 60 * 1000
+
+    // active has just been toggled, find new state
+    if (d.active != prev) {
+        if (d.active) {
+            // increment timer
+            db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').update({
+                timer: new Date((new Date()).getTime() + timerPeriodms),
+            })
+    
+            // set timeout to clear active after time period
+            setTimeout(() => {
+                setInactive();
+            }, timerPeriodms);
+        } else {
+            // toggle current
+            db.collection('room').doc('kvOJ1KrHegxsTyM5AONv').update({
+                current: d.current === 'work' ? 'break' : 'work'
+            })
+        }
+    }
+    prev = d.active
+})
