@@ -10,6 +10,10 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+app.get('/', (req, res) => {
+    res.send('The backend is running. Visit the web app <a href="https://hackhouse-40180.web.app/">here</a>')
+})
+
 setInterval(function () {
     https.get("https://hackhouse-backend.herokuapp.com/");
     console.log('hackhouse pinged');
