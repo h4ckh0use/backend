@@ -1,15 +1,16 @@
 import WebSocket from 'ws';
 import https from 'https';
+import http from 'http';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
 const connections = {}
 
 const app = express();
-const server = https.createServer(app);
+const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-setInterval(function() {
+setInterval(function () {
     https.get("https://hackhouse-backend.herokuapp.com/");
     console.log('hackhouse pinged');
 }, 600000);
